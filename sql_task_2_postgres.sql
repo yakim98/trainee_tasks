@@ -1,4 +1,3 @@
-
 CREATE OR REPLACE PROCEDURE test2(param1 DATE, param2 TIMESTAMP, param3 DATE)
 LANGUAGE plpgsql
 AS $$
