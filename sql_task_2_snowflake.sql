@@ -41,4 +41,5 @@ def test2_calls(session, start_date):
     return session.create_dataframe(call_test2, schema=['call_text'])
 $$;        
 
+
 CALL test2_calls('2025-01-28');
