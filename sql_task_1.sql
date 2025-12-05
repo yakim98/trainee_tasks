@@ -79,47 +79,55 @@ ORDER BY inactive_customers DESC;
 --7. Display the film category with the highest total rental hours in cities where customer.address_id belongs to that city
 -- and starts with the letter "a". Do the same for cities containing the symbol "-". Write this in a single query.
 (
-WITH category_revenue AS (SELECT cat.name,
-                                  ROUND(SUM(EXTRACT(EPOCH FROM (r.return_date - r.rental_date) / 3600)),
-                                        2) AS total_rental_hours
-                           FROM category cat
-                                    JOIN film_category fc ON cat.category_id = fc.category_id
-                                    JOIN film f ON fc.film_id = f.film_id
-                                    JOIN inventory i ON f.film_id = i.film_id
-                                    JOIN rental r ON i.inventory_id = r.inventory_id
-                                    JOIN customer cust ON r.customer_id = cust.customer_id
-                                    JOIN address a ON cust.address_id = a.address_id
-                                    JOIN city c ON a.city_id = c.city_id
-                           WHERE city LIKE '%-%'
-                           GROUP BY cat.category_id, cat.name)
- SELECT name,
-        total_rental_hours
- FROM (SELECT *,
-              DENSE_RANK() OVER (ORDER BY total_rental_hours DESC) AS ranking
-       FROM category_revenue) AS ranked
- WHERE ranking = 1
- )
+    WITH category_revenue AS (
+        SELECT 
+            cat.name,
+            ROUND(SUM(EXTRACT(EPOCH FROM (r.return_date - r.rental_date) / 3600)), 2) AS total_rental_hours,
+            'Contains -' AS group_name
+        FROM category cat
+            JOIN film_category fc ON cat.category_id = fc.category_id
+            JOIN film f ON fc.film_id = f.film_id
+            JOIN inventory i ON f.film_id = i.film_id
+            JOIN rental r ON i.inventory_id = r.inventory_id
+            JOIN customer cust ON r.customer_id = cust.customer_id
+            JOIN address a ON cust.address_id = a.address_id
+            JOIN city c ON a.city_id = c.city_id
+        WHERE city LIKE '%-%'
+        GROUP BY cat.category_id, cat.name
+    )
+    SELECT name, total_rental_hours, group_name
+    FROM (
+        SELECT *,
+               DENSE_RANK() OVER (ORDER BY total_rental_hours DESC) AS ranking
+        FROM category_revenue
+    ) ranked
+    WHERE ranking = 1
+)
 
 UNION ALL
 
 (
-    WITH category_revenue AS (SELECT cat.name,
-                                     ROUND(SUM(EXTRACT(EPOCH FROM (r.return_date - r.rental_date) / 3600)),
-                                           2) AS total_rental_hours
-                              FROM category cat
-                                       JOIN film_category fc ON cat.category_id = fc.category_id
-                                       JOIN film f ON fc.film_id = f.film_id
-                                       JOIN inventory i ON f.film_id = i.film_id
-                                       JOIN rental r ON i.inventory_id = r.inventory_id
-                                       JOIN customer cust ON r.customer_id = cust.customer_id
-                                       JOIN address a ON cust.address_id = a.address_id
-                                       JOIN city c ON a.city_id = c.city_id
-                              WHERE city LIKE 'a%'
-                              GROUP BY cat.category_id, cat.name)
-    SELECT name,
-           total_rental_hours
-    FROM (SELECT *,
-                 DENSE_RANK() OVER (ORDER BY total_rental_hours DESC) AS ranking
-          FROM category_revenue) AS ranked
+    WITH category_revenue AS (
+        SELECT 
+            cat.name,
+            ROUND(SUM(EXTRACT(EPOCH FROM (r.return_date - r.rental_date) / 3600)), 2) AS total_rental_hours,
+            'Start with A' AS group_name
+        FROM category cat
+            JOIN film_category fc ON cat.category_id = fc.category_id
+            JOIN film f ON fc.film_id = f.film_id
+            JOIN inventory i ON f.film_id = i.film_id
+            JOIN rental r ON i.inventory_id = r.inventory_id
+            JOIN customer cust ON r.customer_id = cust.customer_id
+            JOIN address a ON cust.address_id = a.address_id
+            JOIN city c ON a.city_id = c.city_id
+        WHERE city ILIKE 'a%'
+        GROUP BY cat.category_id, cat.name
+    )
+    SELECT name, total_rental_hours, group_name
+    FROM (
+        SELECT *,
+               DENSE_RANK() OVER (ORDER BY total_rental_hours DESC) AS ranking
+        FROM category_revenue
+    ) ranked
     WHERE ranking = 1
 );
